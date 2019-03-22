@@ -35,16 +35,16 @@ class WindowState:
         sW, sH = self.screen.get_size()
         cx, cy = self.pos
 
-        for i in range(mH):
+        for i in range(tH):
             y = i * TILESIZE - cy
             if y > sH: break
             if y + TILESIZE <= 0: continue
-            for j in range(mW):
+            for j in range(tW):
                 x = j * TILESIZE - cx
                 if x > sW: break
                 if x + TILESIZE <= 0: continue
 
-            self.set_tile(i, j, (x, y))
+                self.set_tile(i, j, (x, y))
 
         # show fps
         text = self.font.render(str(self.clock.get_fps()), 1, (100, 10, 100))
@@ -94,7 +94,7 @@ def load_map(filename):
 
 def main():
     pygame.init()
-    game = GameState()
+    game = WindowState()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
