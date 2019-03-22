@@ -2,7 +2,7 @@ import pygame
 import pygame.locals
 from random import choice
 
-TILESIZE = 30
+TILESIZE = [15, 21, 30, 42, 60]
 
 
 class WindowState:
@@ -14,9 +14,16 @@ class WindowState:
         self.background = pygame.Surface(self.screen.get_size()).convert()
         self.font = pygame.font.Font(None, 36)
         self.clock = pygame.time.Clock()
-        self.tiles = load_tile_table('data/tileset.png', TILESIZE, TILESIZE)
+        self.tiles = load_tile_table('data/tileset.png', 30, 30)
         self.map = load_map('map.map')
-        self.pos = (0, 0)   # upper left corner
+
+        self.mapTH = len(self.map[0])   # height in tiles
+        self.mapTW = len(self.map)      # width in tiles
+        
+        self.scale = 2
+        self.pos = (self.mapTW / 2 * TILESIZE[self.scale],
+                    self.mapTH / 2 * TILESIZE[self.scale])
+
 
 
     def set_tile(self, i, j, pos):
@@ -31,18 +38,17 @@ class WindowState:
         self.clock.tick()
         self.background.fill((200, 200, 200))
 
-        tW, tH = len(self.map[0]), len(self.map)
-        sW, sH = self.screen.get_size()
-        cx, cy = self.pos
+        screenPW, screenPH = self.screen.get_size()
+        cx, cy = self.pos   # in pixels
 
-        for i in range(tH):
-            y = i * TILESIZE - cy
-            if y > sH: break
-            if y + TILESIZE <= 0: continue
-            for j in range(tW):
-                x = j * TILESIZE - cx
-                if x > sW: break
-                if x + TILESIZE <= 0: continue
+        for i in range(self.mapTH):
+            y = i * TILESIZE[self.scale] - cy
+            if y > screenPH: break
+            if y + TILESIZE[self.scale] <= 0: continue
+            for j in range(self.mapTW):
+                x = j * TILESIZE[self.scale] - cx
+                if x > screenPW: break
+                if x + TILESIZE[self.scale] <= 0: continue
 
                 self.set_tile(i, j, (x, y))
 
@@ -56,8 +62,8 @@ class WindowState:
 
 
     def move_screen(self, dx, dy):
-        mW = len(self.map[0]) * TILESIZE
-        mH = len(self.map) * TILESIZE
+        mW = len(self.map[0]) * TILESIZE[self.scale]
+        mH = len(self.map) * TILESIZE[self.scale]
         sW, sH = self.screen.get_size()
         x, y = self.pos
         x += dx
@@ -74,6 +80,13 @@ class WindowState:
             y = mH - sH
 
         self.pos = (x, y)
+
+    def rescale(self, ds):
+        if self.scale + ds < 0 or self.scale + ds >= len(TILESIZE):
+            return
+        self.scale += ds
+        self.move_screen(0, 0)
+
 
 
 def load_tile_table(filename, width, height):
@@ -99,8 +112,13 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.locals.QUIT:
                 return
-            if event.type == pygame.locals.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return
+            if event.type == pygame.locals.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_PAGEUP:
+                    game.rescale(-1)
+                if event.key == pygame.K_PAGEDOWN:
+                    game.rescale(1)
         if pygame.key.get_pressed()[pygame.K_LEFT]:
             game.move_screen(-1, 0)
         if pygame.key.get_pressed()[pygame.K_RIGHT]:
