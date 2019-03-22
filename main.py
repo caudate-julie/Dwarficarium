@@ -1,8 +1,35 @@
 import pygame
 import pygame.locals
+
+from copy import deepcopy
+import math
 from random import choice
 
 TILESIZE = [15, 21, 30, 42, 60]
+TILE_FILE = 'data/tileset.png'
+TILE_SRC_SIZE = 30
+
+
+class Tileset:
+    def __init__(self, image, scale, src_size):
+        self.scale = scale
+        imageW, imageH = image.get_size()
+        tilesW, tilesH = imageW // src_size, imageH // src_size
+
+        size = TILESIZE[scale]
+        self.tileset = []
+        self.img = pygame.Surface((tilesW * size, tilesH * size), flags=image.get_flags())
+        for i in range(tilesW):
+            self.tileset.append([])
+            for j in range(tilesH):
+                clip = image.subsurface((i*src_size, j*src_size, src_size, src_size))
+                src = pygame.transform.scale(clip, (size, size))
+                self.img.blit(src, (i*size, j*size))
+                self.tileset[i].append(self.img.subsurface(i*size, j*size, size, size))
+
+        self.stone = self.tileset[0][0]
+        self.floor = self.tileset[1][0]
+
 
 
 class WindowState:
@@ -14,23 +41,24 @@ class WindowState:
         self.background = pygame.Surface(self.screen.get_size()).convert()
         self.font = pygame.font.Font(None, 36)
         self.clock = pygame.time.Clock()
-        self.tiles = load_tile_table('data/tileset.png', 30, 30)
-        self.map = load_map('map.map')
 
+        img = pygame.image.load(TILE_FILE).convert()
+        self.tiles = [Tileset(img, i, TILE_SRC_SIZE) for i in range(len(TILESIZE))]
+        self.scale = 2
+
+        self.map = load_map('map.map')
         self.mapTH = len(self.map[0])   # height in tiles
         self.mapTW = len(self.map)      # width in tiles
         
-        self.scale = 2
         self.pos = (self.mapTW / 2 * TILESIZE[self.scale],
                     self.mapTH / 2 * TILESIZE[self.scale])
 
 
-
     def set_tile(self, i, j, pos):
         if self.map[i][j] == '.':
-            tile = self.tiles[0][0] 
+            tile = self.tiles[self.scale].stone
         else:
-            tile = self.tiles[1][0]
+            tile = self.tiles[self.scale].floor
         self.background.blit(tile, pos)
 
         
@@ -100,6 +128,17 @@ def load_tile_table(filename, width, height):
             tiles[-1].append(tileset.subsurface(rect))
     return tiles
 
+
+
+def generate_map(width, height):
+    f = open('map.map', 'w')
+    for x in range(width):
+        for y in range(height):
+            f.write(choice('.#'))
+        f.write('\n')
+    f.close()
+
+
 def load_map(filename):
     f = open(filename, 'r')
     return f.read().splitlines()
@@ -130,15 +169,6 @@ def main():
 
         game.render()            
         pygame.display.update()
-
-
-def generate_map(width, height):
-    f = open('map.map', 'w')
-    for x in range(width):
-        for y in range(height):
-            f.write(choice('.#'))
-        f.write('\n')
-    f.close()
 
 
 if __name__ == '__main__':
