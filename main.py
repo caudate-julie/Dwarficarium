@@ -50,9 +50,9 @@ class WindowState:
         self.scale = 2
 
         self.map = load_map('map.map')
-        self.mapTH = len(self.map[0])   # height in tiles
-        self.mapTW = len(self.map)      # width in tiles
-        
+        self.mapTH = len(self.map)   # height in tiles
+        self.mapTW = len(self.map[0])      # width in tiles
+
         self.pos = (self.mapTW / 2 * TILESIZE[self.scale],
                     self.mapTH / 2 * TILESIZE[self.scale])
         self.cursor_pos = (self.mapTW // 2, self.mapTH // 2)
@@ -129,8 +129,8 @@ class WindowState:
 
 def generate_map(width, height):
     f = open('map.map', 'w')
-    for x in range(width):
-        for y in range(height):
+    for y in range(height):
+        for x in range(width):
             f.write(choice('.#'))
         f.write('\n')
     f.close()
