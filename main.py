@@ -1,9 +1,11 @@
-import pygame
-import pygame.locals
-
 from copy import deepcopy
 import math
 from random import choice
+
+import pygame
+import pygame.locals
+
+from vec2 import Vec2
 
 TILESIZE = [15, 21, 30, 42, 60]
 
@@ -50,12 +52,11 @@ class WindowState:
         self.scale = 2
 
         self.map = load_map('map.map')
-        self.mapTH = len(self.map)   # height in tiles
-        self.mapTW = len(self.map[0])      # width in tiles
+        self.map_size = Vec2(len(self.map[0]), len(self.map))
 
-        self.pos = (self.mapTW / 2 * TILESIZE[self.scale],
-                    self.mapTH / 2 * TILESIZE[self.scale])
-        self.cursor_pos = (self.mapTW // 2, self.mapTH // 2)
+        screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
+        self.screen_pos = (self.map_size - screen_size) * 0.5
+        self.cursor_pos = Vec2(self.map_size.x // 2, self.map_size.y // 2)
 
     @property
     def tileset(self):
@@ -72,24 +73,25 @@ class WindowState:
         self.clock.tick()
         self.background.fill((200, 200, 200))
 
-        screenPW, screenPH = self.screen.get_size()
-        cx, cy = self.pos   # in pixels
-
         tile_size = self.tileset.size
-        for i in range(self.mapTH):
-            y = i * tile_size - cy
+        screenPW, screenPH = self.screen.get_size()
+
+        screen_pos_pix = self.screen_pos * tile_size
+        screen_pos_pix = Vec2(int(screen_pos_pix.x), int(screen_pos_pix.y))
+
+        for i in range(self.map_size.y):
+            y = i * tile_size - screen_pos_pix.y
             if y > screenPH: break
             if y + tile_size <= 0: continue
-            for j in range(self.mapTW):
-                x = j * tile_size - cx
+            for j in range(self.map_size.x):
+                x = j * tile_size - screen_pos_pix.x
                 if x > screenPW: break
                 if x + tile_size <= 0: continue
 
                 self.set_tile(i, j, (x, y))
 
-        x = (self.cursor_pos[0] - 1) * tile_size - cx
-        y = (self.cursor_pos[1] - 1) * tile_size - cy
-        self.background.blit(self.tileset.cursor, (x, y))
+        xy = (self.cursor_pos - Vec2(1, 1)) * tile_size - screen_pos_pix
+        self.background.blit(self.tileset.cursor, xy.as_tuple())
 
         # show fps
         text = self.font.render(str(self.clock.get_fps()), 1, (100, 10, 100))
@@ -101,24 +103,11 @@ class WindowState:
 
 
     def move_screen(self, dx, dy):
-        mW = len(self.map[0]) * self.tileset.size
-        mH = len(self.map) * self.tileset.size
-        sW, sH = self.screen.get_size()
-        x, y = self.pos
-        x += dx
-        y += dy
+        screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
 
-        if x <= 0:
-            x = 0
-        elif x >= mW - sW:
-            x = mW - sW
-
-        if y <= 0:
-            y = 0
-        elif y >= mH - sH:
-            y = mH - sH
-
-        self.pos = (x, y)
+        self.screen_pos += Vec2(dx, dy) / self.tileset.size
+        self.screen_pos.x = max(0, min(self.screen_pos.x, self.map_size.x - screen_size.x))
+        self.screen_pos.y = max(0, min(self.screen_pos.y, self.map_size.y - screen_size.y))
 
     def rescale(self, ds):
         if self.scale + ds < 0 or self.scale + ds >= len(TILESIZE):
@@ -156,18 +145,18 @@ def main():
                 if event.key == pygame.K_PAGEDOWN:
                     game.rescale(1)
         if pygame.key.get_pressed()[pygame.K_LEFT]:
-            game.move_screen(-1, 0)
+            game.move_screen(-5, 0)
         if pygame.key.get_pressed()[pygame.K_RIGHT]:
-            game.move_screen(1, 0)
+            game.move_screen(5, 0)
         if pygame.key.get_pressed()[pygame.K_UP]:
-            game.move_screen(0, -1)
+            game.move_screen(0, -5)
         if pygame.key.get_pressed()[pygame.K_DOWN]:
-            game.move_screen(0, 1)
+            game.move_screen(0, 5)
 
         game.render()            
         pygame.display.update()
 
 
 if __name__ == '__main__':
-    generate_map(100, 100)
+    generate_map(100, 50)
     main()
