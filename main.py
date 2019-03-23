@@ -29,6 +29,12 @@ class Tileset:
         self.floor = tileset[1][0]
         self.size = size
 
+        image = pygame.image.load('data/cursor.png').convert()
+        assert image.get_size() == (src_size * 3, src_size * 3)
+        image = pygame.transform.scale(image, (size * 3, size * 3))
+        image.set_colorkey(image.get_at((0, 0)))
+        self.cursor = image
+
 
 class WindowState:
     def __init__(self):
@@ -49,6 +55,7 @@ class WindowState:
         
         self.pos = (self.mapTW / 2 * TILESIZE[self.scale],
                     self.mapTH / 2 * TILESIZE[self.scale])
+        self.cursor_pos = (self.mapTW // 2, self.mapTH // 2)
 
     @property
     def tileset(self):
@@ -79,6 +86,10 @@ class WindowState:
                 if x + tile_size <= 0: continue
 
                 self.set_tile(i, j, (x, y))
+
+        x = (self.cursor_pos[0] - 1) * tile_size - cx
+        y = (self.cursor_pos[1] - 1) * tile_size - cy
+        self.background.blit(self.tileset.cursor, (x, y))
 
         # show fps
         text = self.font.render(str(self.clock.get_fps()), 1, (100, 10, 100))
