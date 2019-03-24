@@ -1,11 +1,12 @@
 import time
-from random import choice
+import random
 from dataclasses import dataclass
 
 import pygame
 import pygame.locals
 
 from vec2 import Vec2
+import terrain
 
 TILESIZE = [15, 21, 30, 42, 60]
 
@@ -84,7 +85,9 @@ class WindowState:
         self.tileset_by_size = {size: Tileset(size) for size in TILESIZE}
         self.scale = 2
 
-        self.map = load_map('map.map')
+        seed = random.randrange(10**6)
+        print('seed:', seed)
+        self.map = terrain.generate_map(100, 50, seed)
         self.map_size = Vec2(len(self.map[0]), len(self.map))
 
         screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
@@ -179,20 +182,6 @@ class WindowState:
         self.clip_screen_to_map()
 
 
-def generate_map(width, height):
-    f = open('map.map', 'w')
-    for y in range(height):
-        for x in range(width):
-            f.write(choice('.#'))
-        f.write('\n')
-    f.close()
-
-
-def load_map(filename):
-    f = open(filename, 'r')
-    return f.read().splitlines()
-
-
 def main():
     pygame.init()
     game = WindowState()
@@ -225,5 +214,4 @@ def main():
 
 
 if __name__ == '__main__':
-    generate_map(100, 50)
     main()
