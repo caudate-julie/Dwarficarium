@@ -15,21 +15,21 @@ class Tileset:
     def __init__(self, size):
         src_size = 30
         image = pygame.image.load('data/tileset.png').convert()
-        imageW, imageH = image.get_size()
-        tilesW, tilesH = imageW // src_size, imageH // src_size
+        image_pix_W, image_pix_H = image.get_size()
+        tilesW, tilesH = image_pix_W // src_size, image_pix_H // src_size
 
         tileset = []
-        img = pygame.Surface((tilesW * size, tilesH * size), flags=image.get_flags())
-        for i in range(tilesW):
+        resized_image = pygame.Surface((tilesW * size, tilesH * size), flags=image.get_flags())
+        for j in range(tilesH):
             tileset.append([])
-            for j in range(tilesH):
+            for i in range(tilesW):
                 clip = image.subsurface((i*src_size, j*src_size, src_size, src_size))
                 src = pygame.transform.scale(clip, (size, size))
-                img.blit(src, (i*size, j*size))
-                tileset[i].append(img.subsurface(i*size, j*size, size, size))
+                resized_image.blit(src, (i*size, j*size))
+                tileset[j].append(resized_image.subsurface(i*size, j*size, size, size))
 
         self.stone = tileset[0][0]
-        self.floor = tileset[1][0]
+        self.floor = tileset[0][1]
         self.size = size
 
         image = pygame.image.load('data/cursor.png').convert()
@@ -74,7 +74,6 @@ class KeyState:
 
 class WindowState:
     def __init__(self):
-        # self.screen = pygame.display.set_mode((420, 300))
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption('Pre-embark')
 
@@ -115,18 +114,18 @@ class WindowState:
         self.background.fill((200, 200, 200))
 
         tile_size = self.tileset.size
-        screenPW, screenPH = self.screen.get_size()
+        screen_pix_W, screen_pix_H = self.screen.get_size()
 
         screen_pos_pix = self.screen_pos * tile_size
         screen_pos_pix = Vec2(int(screen_pos_pix.x), int(screen_pos_pix.y))
 
         for i in range(self.map_size.y):
             y = i * tile_size - screen_pos_pix.y
-            if y > screenPH: break
+            if y > screen_pix_H: break
             if y + tile_size <= 0: continue
             for j in range(self.map_size.x):
                 x = j * tile_size - screen_pos_pix.x
-                if x > screenPW: break
+                if x > screen_pix_W: break
                 if x + tile_size <= 0: continue
 
                 self.set_tile(i, j, (x, y))
@@ -144,8 +143,15 @@ class WindowState:
 
     def clip_screen_to_map(self):
         screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
-        self.screen_pos.x = max(0, min(self.screen_pos.x, self.map_size.x - screen_size.x))
-        self.screen_pos.y = max(0, min(self.screen_pos.y, self.map_size.y - screen_size.y))
+        if screen_size.x < self.map_size.x:
+            self.screen_pos.x = max(0, min(self.screen_pos.x, self.map_size.x - screen_size.x))
+        else:
+            self.screen_pos.x = (self.map_size.x - screen_size.x) / 2
+        if screen_size.y < self.map_size.y:
+            self.screen_pos.y = max(0, min(self.screen_pos.y, self.map_size.y - screen_size.y))
+        else:
+            self.screen_pos.y = (self.map_size.y - screen_size.y) / 2
+        
 
     def rescale(self, ds):
         if self.scale + ds < 0 or self.scale + ds >= len(TILESIZE):
