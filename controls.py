@@ -83,13 +83,13 @@ def get_input(game):
         dt = time.time() - prev_time
         prev_time += dt
         if game.west_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveWest.key]):
-            game.move_cursor(-1, 0)
+            game.move_cursor(-1, 0, 0)
         if game.east_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveEast.key]):
-            game.move_cursor(1, 0)
+            game.move_cursor(1, 0, 0)
         if game.north_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveNorth.key]):
-            game.move_cursor(0, -1)
+            game.move_cursor(0, -1, 0)
         if game.south_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveSouth.key]):
-            game.move_cursor(0, 1)
+            game.move_cursor(0, 1, 0)
 
     return True
 

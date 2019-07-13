@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pygame
 import pygame.locals
 
-from vec2 import Vec2
+from vecs import Vec2, Vec3
 from controls import get_input, KeyState
 import terrain
 
@@ -54,12 +54,12 @@ class WindowState:
 
         seed = random.randrange(10**6)
         print('seed:', seed)
-        self.map = terrain.generate_map(100, 50, seed)
-        self.map_size = Vec2(len(self.map[0]), len(self.map))
+        self.map = terrain.generate_map(100, 50, 10, seed)
+        self.map_size = Vec3(len(self.map[0][0]), len(self.map[0]), len(self.map))
 
         screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
-        self.screen_pos = (self.map_size - screen_size) * 0.5
-        self.cursor_pos = Vec2(self.map_size.x // 2, self.map_size.y // 2)
+        self.cursor_pos = self.map_size // 2
+        self.screen_pos = self.cursor_pos.vec2() - screen_size // 2
 
         self.north_key_state = KeyState()
         self.south_key_state = KeyState()
@@ -70,14 +70,15 @@ class WindowState:
     def tileset(self):
         return self.tileset_by_size[TILESIZE[self.scale]]
 
-    def set_tile(self, i, j, pos):
-        if self.map[i][j] == '#':
+    def set_tile(self, i, j, k, pos):
+        if self.map[i][j][k] == '#':
             tile = self.tileset.stone
-        elif self.map[i][j] == '.':
+        elif self.map[i][j][k] == '.':
             tile = self.tileset.floor
         else:
-            assert False, self.map[i][j]
+            assert False, self.map[i][j][k]
         self.background.blit(tile, pos)
+
 
     def render(self):
         self.clock.tick()
@@ -87,7 +88,6 @@ class WindowState:
         screen_pix_W, screen_pix_H = self.screen.get_size()
 
         screen_pos_pix = self.screen_pos * tile_size
-        screen_pos_pix = Vec2(int(screen_pos_pix.x), int(screen_pos_pix.y))
 
         for i in range(self.map_size.y):
             y = i * tile_size - screen_pos_pix.y
@@ -98,9 +98,9 @@ class WindowState:
                 if x > screen_pix_W: break
                 if x + tile_size <= 0: continue
 
-                self.set_tile(i, j, (x, y))
+                self.set_tile(self.cursor_pos.z, i, j, (x, y))
 
-        xy = (self.cursor_pos - Vec2(1, 1)) * tile_size - screen_pos_pix
+        xy = (self.cursor_pos.vec2() - Vec2(1, 1)) * tile_size - screen_pos_pix
         self.background.blit(self.tileset.cursor, xy.as_tuple())
 
         # show fps
@@ -131,15 +131,16 @@ class WindowState:
         self.scale += ds
 
         # preserve relative location of the cursor on the screen
-        cursor_pos = self.cursor_pos + Vec2(0.5, 0.5)
+        cursor_pos = self.cursor_pos + Vec3(0.5, 0.5)
         self.screen_pos = cursor_pos - (cursor_pos - self.screen_pos) / factor
 
         self.clip_screen_to_map()
 
-    def move_cursor(self, dx, dy):
-        self.cursor_pos += Vec2(dx, dy)
+    def move_cursor(self, dx, dy, dz):
+        self.cursor_pos += Vec3(dx, dy, dz)
         self.cursor_pos.x = max(0, min(self.cursor_pos.x, self.map_size.x - 1))
         self.cursor_pos.y = max(0, min(self.cursor_pos.y, self.map_size.y - 1))
+        self.cursor_pos.z = max(0, min(self.cursor_pos.z, self.map_size.z - 1))
 
         screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
 
@@ -154,6 +155,7 @@ class WindowState:
             self.screen_pos.y -= JUMP
         if self.cursor_pos.y - 0.5 > self.screen_pos.y + screen_size.y - ALLOWED_GAP:
             self.screen_pos.y += JUMP
+
 
         self.clip_screen_to_map()
 

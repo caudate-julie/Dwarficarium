@@ -1,21 +1,33 @@
 import random
 
 
-def generate_map(width, height, seed):
+def generate_map(width, height, depth, seed):
     size = 1
     while size < width or size < height:
         size *= 2
     h = generate_height_map(size, seed)
-    ave = sum(sum(row[:width]) for row in h[:height]) / (width * height)
+    min_z = min(min(row[:width]) for row in h[:height])
+    max_z = max(max(row[:width]) for row in h[:height])
+    step = (max_z - min_z) / (depth / 2)
+    # ave = sum(sum(row[:width]) for row in h[:height]) / (width * height)
 
     result = []
-    for i in range(height):
+    for _ in range(depth // 2):
         result.append([])
-        for j in range(width):
-            if h[i][j] > ave:
-                result[-1].append('#')
-            else:
-                result[-1].append('.')
+        for _ in range(height):
+            result[-1].append([])
+            for _ in range(width):
+                result[-1][-1].append('#')
+
+    for k in range(depth // 2, depth):
+        result.append([])
+        for i in range(height):
+            result[-1].append([])
+            for j in range(width):
+                if h[i][j] > min_z + step * (k - depth / 2):
+                    result[-1][-1].append('#')
+                else:
+                    result[-1][-1].append('.')
 
     return result
 
