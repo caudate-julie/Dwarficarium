@@ -54,7 +54,7 @@ class WindowState:
 
         seed = random.randrange(10**6)
         print('seed:', seed)
-        self.map = terrain.generate_map(100, 50, 10, seed)
+        self.map = terrain.generate_map(100, 50, 30, seed)
         self.map_size = Vec3(len(self.map[0][0]), len(self.map[0]), len(self.map))
 
         screen_size = Vec2(*self.screen.get_size()) / self.tileset.size
@@ -65,6 +65,8 @@ class WindowState:
         self.south_key_state = KeyState()
         self.west_key_state = KeyState()
         self.east_key_state = KeyState()
+        self.up_key_state = KeyState()
+        self.down_key_state = KeyState()
 
     @property
     def tileset(self):
@@ -131,7 +133,7 @@ class WindowState:
         self.scale += ds
 
         # preserve relative location of the cursor on the screen
-        cursor_pos = self.cursor_pos + Vec3(0.5, 0.5)
+        cursor_pos = self.cursor_pos.vec2() + Vec2(0.5, 0.5)
         self.screen_pos = cursor_pos - (cursor_pos - self.screen_pos) / factor
 
         self.clip_screen_to_map()

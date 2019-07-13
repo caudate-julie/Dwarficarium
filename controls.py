@@ -90,6 +90,10 @@ def get_input(game):
             game.move_cursor(0, -1, 0)
         if game.south_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveSouth.key]):
             game.move_cursor(0, 1, 0)
+        if game.up_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveUp.key]):
+            game.move_cursor(0, 0, 1)
+        if game.down_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveDown.key]):
+            game.move_cursor(0, 0, -1)
 
     return True
 

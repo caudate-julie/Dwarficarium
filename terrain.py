@@ -9,17 +9,10 @@ def generate_map(width, height, depth, seed):
     min_z = min(min(row[:width]) for row in h[:height])
     max_z = max(max(row[:width]) for row in h[:height])
     step = (max_z - min_z) / (depth / 2)
-    # ave = sum(sum(row[:width]) for row in h[:height]) / (width * height)
 
     result = []
-    for _ in range(depth // 2):
-        result.append([])
-        for _ in range(height):
-            result[-1].append([])
-            for _ in range(width):
-                result[-1][-1].append('#')
 
-    for k in range(depth // 2, depth):
+    for k in range(depth + 1):
         result.append([])
         for i in range(height):
             result[-1].append([])
