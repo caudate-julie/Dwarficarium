@@ -6,6 +6,7 @@ import pygame
 import pygame.locals
 
 from vec2 import Vec2
+from controls import get_input, KeyState
 import terrain
 
 TILESIZE = [15, 21, 30, 42, 60]
@@ -39,39 +40,6 @@ class Tileset:
         self.cursor = image
 
 
-FIRST_KEY_PRESS_DELAY = 0.25
-REPEAT_KEY_PRESS_DELAY = 0.1
-# When a key is pressed and hold at moment 0,
-# key press events happen at the following times:
-#   0
-#   FIRST_KEY_PRESS_DELAY
-#   FIRST_KEY_PRESS_DELAY + REPEAT_KEY_PRESS_DELAY
-#   FIRST_KEY_PRESS_DELAY + REPEAT_KEY_PRESS_DELAY * 2
-#   ...
-
-@dataclass
-class KeyState:
-    cooldown: float = 0.0
-    num_presses: int = 0
-
-    def tick(self, dt, pressed):
-        '''Returns whether event should be fired this tick.'''
-        if not pressed:
-            self.cooldown = 0
-            self.num_presses = 0
-            return False
-
-        self.cooldown -= dt
-        if self.cooldown > 0:
-            return False
-        if self.num_presses == 0:
-            self.cooldown = FIRST_KEY_PRESS_DELAY
-        else:
-            self.cooldown = REPEAT_KEY_PRESS_DELAY
-        self.num_presses += 1
-        return True
-
-
 class WindowState:
     def __init__(self):
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -93,20 +61,22 @@ class WindowState:
         self.screen_pos = (self.map_size - screen_size) * 0.5
         self.cursor_pos = Vec2(self.map_size.x // 2, self.map_size.y // 2)
 
-        self.up_key_state = KeyState()
-        self.down_key_state = KeyState()
-        self.left_key_state = KeyState()
-        self.right_key_state = KeyState()
+        self.north_key_state = KeyState()
+        self.south_key_state = KeyState()
+        self.west_key_state = KeyState()
+        self.east_key_state = KeyState()
 
     @property
     def tileset(self):
         return self.tileset_by_size[TILESIZE[self.scale]]
 
     def set_tile(self, i, j, pos):
-        if self.map[i][j] == '.':
+        if self.map[i][j] == '#':
             tile = self.tileset.stone
-        else:
+        elif self.map[i][j] == '.':
             tile = self.tileset.floor
+        else:
+            assert False, self.map[i][j]
         self.background.blit(tile, pos)
 
     def render(self):
@@ -191,32 +161,11 @@ class WindowState:
 def main():
     pygame.init()
     game = WindowState()
-    prev_time = time.time()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.locals.QUIT:
-                return
-            if event.type == pygame.locals.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    return
-                if event.key == pygame.K_PAGEUP:
-                    game.rescale(-1)
-                if event.key == pygame.K_PAGEDOWN:
-                    game.rescale(1)
-
-        dt = time.time() - prev_time
-        prev_time += dt
-        if game.left_key_state.tick(dt, pygame.key.get_pressed()[pygame.K_LEFT]):
-            game.move_cursor(-1, 0)
-        if game.right_key_state.tick(dt, pygame.key.get_pressed()[pygame.K_RIGHT]):
-            game.move_cursor(1, 0)
-        if game.up_key_state.tick(dt, pygame.key.get_pressed()[pygame.K_UP]):
-            game.move_cursor(0, -1)
-        if game.down_key_state.tick(dt, pygame.key.get_pressed()[pygame.K_DOWN]):
-            game.move_cursor(0, 1)
-
+    
+    while get_input(game):
         game.render()
         pygame.display.update()
+        
 
 
 if __name__ == '__main__':
