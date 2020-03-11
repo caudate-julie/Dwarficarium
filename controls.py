@@ -71,9 +71,9 @@ def get_input(game):
 
         if True:    # if map-manipulating context
             if event.type == pygame.locals.KEYDOWN: # temp
-                if (event.key, modifiers) == MapKeyBindings.ZoomOut:
+                if (event.key, modifiers) in MapKeyBindings.ZoomOut:
                     game.rescale(-1)
-                if (event.key, modifiers) == MapKeyBindings.ZoomIn:
+                if (event.key, modifiers) in MapKeyBindings.ZoomIn:
                     game.rescale(1)
         # assert False
 
