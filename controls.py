@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Dict, List, Any, Optional
 import pygame
 from pygame import locals
 import time
@@ -19,26 +20,43 @@ REPEAT_KEY_PRESS_DELAY = 0.1
 #   ...
 
 @dataclass
-class KeyState:
+class KeysState:
     cooldown: float = 0.0
-    num_presses: int = 0
+    action_to_pressed_ago: Dict[Any, float] = field(default_factory=dict)
 
-    def tick(self, dt, pressed):
-        '''Returns whether event should be fired this tick.'''
-        if not pressed:
-            self.cooldown = 0
-            self.num_presses = 0
-            return False
+    def tick(self, dt, action_to_pressed: Dict[Any, bool]) -> List[Any]:
+        '''Returns the list of actions triggered at this tick.'''
+        repetetion_trigger = False
+        prev_pressed = bool(self.action_to_pressed_ago)
+        if prev_pressed:
+            self.cooldown -= dt
+            if self.cooldown <= 0:
+                self.cooldown += REPEAT_KEY_PRESS_DELAY
+                repetetion_trigger = True
 
-        self.cooldown -= dt
-        if self.cooldown > 0:
-            return False
-        if self.num_presses == 0:
-            self.cooldown = FIRST_KEY_PRESS_DELAY
+        result = []
+        for a, pressed in action_to_pressed.items():
+            if pressed:
+                ago = self.action_to_pressed_ago.get(a)
+                if ago is None:
+                    result.append(a)
+                    self.action_to_pressed_ago[a] = 0.0
+                else:
+                    if ago >= REPEAT_KEY_PRESS_DELAY and repetetion_trigger:
+                        result.append(a)
+            else:
+                self.action_to_pressed_ago.pop(a, None)
+
+        for a in self.action_to_pressed_ago:
+            self.action_to_pressed_ago[a] += dt
+
+        if any(action_to_pressed.values()):
+            if not prev_pressed:
+                self.cooldown = FIRST_KEY_PRESS_DELAY
         else:
-            self.cooldown = REPEAT_KEY_PRESS_DELAY
-        self.num_presses += 1
-        return True
+            self.cooldown = 0.0
+
+        return result
 
 
 prev_time = time.time() # temp!
@@ -78,22 +96,22 @@ def get_input(game):
         # assert False
 
     if True:    # if map-manipulating context
-        # assert False
         global prev_time
         dt = time.time() - prev_time
         prev_time += dt
-        if game.west_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveWest.key]):
-            game.move_cursor(-1, 0, 0)
-        if game.east_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveEast.key]):
-            game.move_cursor(1, 0, 0)
-        if game.north_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveNorth.key]):
-            game.move_cursor(0, -1, 0)
-        if game.south_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveSouth.key]):
-            game.move_cursor(0, 1, 0)
-        if game.up_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveUp.key]):
-            game.move_cursor(0, 0, 1)
-        if game.down_key_state.tick(dt, pygame.key.get_pressed()[MapKeyBindings.MoveDown.key]):
-            game.move_cursor(0, 0, -1)
+
+        action_to_key = {
+            (-1,  0,  0): MapKeyBindings.MoveWest.key,
+            ( 1,  0,  0): MapKeyBindings.MoveEast.key,
+            ( 0, -1,  0): MapKeyBindings.MoveNorth.key,
+            ( 0,  1,  0): MapKeyBindings.MoveSouth.key,
+            ( 0,  0, -1): MapKeyBindings.MoveUp.key,
+            ( 0,  0,  1): MapKeyBindings.MoveDown.key,
+        }
+        pressed = pygame.key.get_pressed()
+        action_to_pressed = {a: bool(pressed[key]) for a, key in action_to_key.items()}
+        for a in game.keys_state.tick(dt, action_to_pressed):
+            game.move_cursor(*a)
 
     return True
 

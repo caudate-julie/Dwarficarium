@@ -6,7 +6,7 @@ import pygame
 import pygame.locals
 
 from vecs import Vec2, Vec3
-from controls import get_input, KeyState
+from controls import get_input, KeysState
 import terrain
 
 TILESIZE = [15, 21, 30, 42, 60]
@@ -61,12 +61,7 @@ class WindowState:
         self.cursor_pos = self.map_size // 2
         self.screen_pos = self.cursor_pos.vec2() - screen_size // 2
 
-        self.north_key_state = KeyState()
-        self.south_key_state = KeyState()
-        self.west_key_state = KeyState()
-        self.east_key_state = KeyState()
-        self.up_key_state = KeyState()
-        self.down_key_state = KeyState()
+        self.keys_state = KeysState()
 
     @property
     def tileset(self):
